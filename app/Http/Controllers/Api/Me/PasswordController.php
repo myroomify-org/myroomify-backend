@@ -4,22 +4,25 @@ namespace App\Http\Controllers\Api\Me;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Requests\Me\PasswordUpdateRequest;
 use Illuminate\Support\Facades\Hash;
 
 class PasswordController extends Controller
 {
-    public function update(Request $request) {
+    public function update(PasswordUpdateRequest $request) {
         $user = auth()->user();
 
-        if(!Hash::check($request->current_password, $user->password)) {
+        $validated = $request->validated();
+
+        if(!Hash::check($validated['current_password'], $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'The current password does not match the existing password',
-                'data' => $user
+                'message' => 'The current password does not match the existing password.',
+                'data' => null
             ], 400);
         }
 
-        $user->password = Hash::make($request->new_password);
+        $user->password = Hash::make($validated['new_password']);
 
         $user->save();
 

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Me;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Requests\Me\BookingStoreRequest;
+use App\Http\Requests\Me\BookingUpdateRequest;
 use App\Models\User;
 use App\Models\Room;
 use App\Models\Booking;
@@ -41,21 +43,24 @@ class BookingController extends Controller
         ]);
     }
 
-    public function store(Request $request) {
+    public function store(BookingStoreRequest $request) {
         $user = auth()->user();
+        
+        $validated = $request->validated();
 
-        $room = Room::find($request->room_id);
+        $room = Room::find($validated['room_id']);
+
         if (!$room) {
             return response()->json([
                 'success' => false,
                 'message' => 'No room found with the given ID.',
-                'data' => $room
+                'data' => null
             ], 404);
         }
 
         $overlappingBooking = $room->bookings()
-            ->where('check_in', '<', $request->check_out)
-            ->where('check_out', '>', $request->check_in)
+            ->where('check_in', '<', $validated['check_out'])
+            ->where('check_out', '>', $validated['check_in'])
             ->first();
 
         if ($overlappingBooking) {
@@ -66,23 +71,23 @@ class BookingController extends Controller
             ], 409);
         }
 
-        if ($request->guest_count > $room->capacity) {
+        if ($validated['guest_count'] > $room->capacity) {
             return response()->json([
                 'success' => false,
                 'message' => 'The room does not have enough capacity for the specified number of guests.',
-                'data' => $room
+                'data' => null
             ], 422);
         }
 
         $booking = $user->bookings()->make();
-        $booking->room_id = $request->room_id;
-        $booking->check_in = $request->check_in;
-        $booking->check_out = $request->check_out;
-        $booking->guest_count = $request->guest_count;
+        $booking->room_id = $validated['room_id'];
+        $booking->check_in = $validated['check_in'];
+        $booking->check_out = $validated['check_out'];
+        $booking->guest_count = $validated['guest_count'];
         $days = max(1, Carbon::parse($booking->check_in)->diffInDays(Carbon::parse($booking->check_out)));
-        $booking->total_price = $room->price * $days * $booking->guest_count;
+        $booking->total_price = $room->price * $days * $validated['guest_count'];
         $booking->status = 'pending';
-        
+
         $booking->save();
 
         return response()->json([
@@ -92,7 +97,7 @@ class BookingController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, $bookingId) {
+    public function update(BookingUpdateRequest $request, $bookingId) {
         $user = auth()->user();
 
         $booking = $user->bookings()->find($bookingId);
@@ -105,7 +110,7 @@ class BookingController extends Controller
             ], 404);
         }
 
-        if (in_array($booking->status, ['completed', 'cancelled', 'confirmed'])) {
+        if (in_array($booking->status, ['cancelled', 'confirmed', 'completed'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'This booking cannot be modified.',
@@ -115,10 +120,12 @@ class BookingController extends Controller
 
         $room = $booking->room;
 
+        $validated = $request->validated();
+
         $overlappingBooking = $room->bookings()
             ->where('id', '!=', $booking->id)
-            ->where('check_in', '<', $request->check_out)
-            ->where('check_out', '>', $request->check_in)
+            ->where('check_in', '<', $validated['check_out'])
+            ->where('check_out', '>', $validated['check_in'])
             ->first();
 
         if ($overlappingBooking) {
@@ -129,19 +136,19 @@ class BookingController extends Controller
             ], 409);
         }
 
-        if ($request->guest_count > $room->capacity) {
+        if ($validated['guest_count'] > $room->capacity) {
             return response()->json([
                 'success' => false,
                 'message' => 'The room does not have enough capacity for the specified number of guests.',
-                'data' => $room
+                'data' => null
             ], 422);
         }
 
-        $booking->check_in = $request->check_in;
-        $booking->check_out = $request->check_out;
-        $booking->guest_count = $request->guest_count;
+        $booking->check_in = $validated['check_in'];
+        $booking->check_out = $validated['check_out'];
+        $booking->guest_count = $validated['guest_count'];
         $days = max(1, Carbon::parse($booking->check_in)->diffInDays(Carbon::parse($booking->check_out)));
-        $booking->total_price = $room->price * $days * $booking->guest_count;
+        $booking->total_price = $room->price * $days * $validated['guest_count'];
 
         $booking->save();
 
@@ -151,5 +158,4 @@ class BookingController extends Controller
             'data' => $booking->load(['room', 'guests', 'bookingBillingDetail']),
         ]);
     }
-
 }

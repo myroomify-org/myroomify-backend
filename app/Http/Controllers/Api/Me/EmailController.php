@@ -4,14 +4,17 @@ namespace App\Http\Controllers\Api\Me;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Requests\Me\EmailUpdateRequest;
 
 class EmailController extends Controller
 {
-    public function update(Request $request) {
+    public function update(EmailUpdateRequest $request) {
         $user = auth()->user();
 
-        $user->email = $request->email;
-        
+        $validated = $request->validated();
+
+        $user->email = $validated['email'];
+
         $user->save();
 
         return response()->json([

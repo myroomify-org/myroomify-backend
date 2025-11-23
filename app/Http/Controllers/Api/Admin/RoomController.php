@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Requests\Admin\RoomStoreRequest;
+use App\Http\Requests\Admin\RoomUpdateRequest;
 use App\Models\Room;
 
 class RoomController extends Controller
@@ -44,12 +46,14 @@ class RoomController extends Controller
         ], 200);
     }
 
-    public function store(Request $request) {
+    public function store(RoomStoreRequest $request) {
+        $validated = $request->validated();
+        
         $room = new Room();
-        $room->name = $request->name;
-        $room->capacity = $request->capacity;
-        $room->description = $request->description;
-        $room->price = $request->price;
+        $room->name = $validated['name'];
+        $room->capacity = $validated['capacity'];
+        $room->description = $validated['description'];
+        $room->price = $validated['price'];
 
         $room->save();
 
@@ -70,7 +74,7 @@ class RoomController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, $id) {
+    public function update(RoomUpdateRequest $request, $id) {
         $room = Room::withTrashed()->find($id);
 
         if(!$room) {
@@ -81,10 +85,12 @@ class RoomController extends Controller
             ], 404);
         }
 
-        $room->name = $request->name;
-        $room->capacity = $request->capacity;
-        $room->description = $request->description;
-        $room->price = $request->price;
+        $validated = $request->validated();
+
+        $room->name = $validated['name'];
+        $room->capacity = $validated['capacity'];
+        $room->description = $validated['description'];
+        $room->price = $validated['price'];
 
         $files = $request->allFiles();
 
