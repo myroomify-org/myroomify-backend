@@ -16,6 +16,7 @@ use App\Models\Profile;
 use App\Models\Country;
 use App\Models\City;
 use App\Models\Address;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -82,6 +83,47 @@ class AuthController extends Controller
             'message' => 'Registration was successful.',
             'data' => $user->load('profile.address.city.country')
         ], 201);
+    }
+
+    public function verifyEmail(Request $request) {
+        $token = $request->query('token');
+
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The verification token is missing.',
+                'data' => $token
+            ], 400);
+        }
+
+        $user = User::where('email_verification_token', $token)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The token is invalid or has expired.',
+                'data' => null
+            ], 404);
+        }
+
+        if ($user->email_verified_at) {
+            return response()->json([
+                'success' => true,
+                'message' => 'The email has already been verified.',
+                'data' => null
+            ], 200);
+        }
+
+        $user->email_verified_at = Carbon::now();
+        $user->email_verification_token = null;
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email verification was successful.',
+            'data' => $user
+        ], 200);
     }
 
     public function login(LoginRequest $request) {
