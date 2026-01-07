@@ -8,6 +8,9 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\VerifyEmail;
 use App\Models\User;
 use App\Models\Profile;
 use App\Models\Country;
@@ -63,6 +66,16 @@ class AuthController extends Controller
         $profile->address_id = $address->id;
 
         $profile->save();
+
+        if(config('features.mail_enabled') && config('features.mail_verification_required')) {
+            $user->email_verification_token = Str::random(64);
+
+            $user->save();
+
+            $verificationUrl = url('/api/auth/verify-email?token=' . $user->email_verification_token);
+
+            Mail::to($user->email)->send(new VerifyEmail($user, $verificationUrl));
+        }
 
         return response()->json([
             'success' => true,
