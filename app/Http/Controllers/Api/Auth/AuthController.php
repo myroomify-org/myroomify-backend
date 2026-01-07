@@ -144,6 +144,14 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
+        if (config('features.mail_verification_required') && !$user->email_verified_at) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The email address has not been verified.',
+                'data' => null
+            ], 403);
+        }
+
         if(!$user->is_active) {
             $user->tokens()->delete();
 
