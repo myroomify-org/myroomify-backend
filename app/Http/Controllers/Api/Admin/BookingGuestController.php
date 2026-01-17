@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Requests\Admin\BookingGuestStoreRequest;
+use App\Http\Requests\Admin\BookingGuestUpdateRequest;
 use App\Models\Booking;
 use App\Models\Guest;
 use App\Models\Country;
@@ -12,7 +14,7 @@ use App\Models\Address;
 
 class BookingGuestController extends Controller
 {
-    public function store(Request $request, $bookingId) {
+    public function store(BookingGuestStoreRequest $request, $bookingId) {
         $booking = Booking::find($bookingId);
         if (!$booking) {
             return response()->json([
@@ -38,38 +40,39 @@ class BookingGuestController extends Controller
             ], 400);
         }
 
+        $validated = $request->validated();
+
         $guest = new Guest();
         $guest->booking_id = $booking->id;
-        $guest->first_name = $request->first_name;
-        $guest->last_name = $request->last_name;
-        $guest->birth_date = $request->birth_date;
-        $guest->nationality = $request->nationality;
-        $guest->document_type = $request->document_type;
-        $guest->document_number = $request->document_number;
+        $guest->first_name = $validated['first_name'];
+        $guest->last_name = $validated['last_name'];
+        $guest->birth_date = $validated['birth_date'];
+        $guest->nationality = $validated['nationality'];
+        $guest->document_type = $validated['document_type'];
+        $guest->document_number = $validated['document_number'];
 
-        $country = Country::where('name', $request->country_name)->first();
+        $country = Country::where('name', $validated['country_name'])->first();
 
         if(!$country) {
             $country = new Country();
-            $country->name = $request->country_name;
+            $country->name = $validated['country_name'];
             $country->save();
         }
 
-        $city = City::where('name', $request->city_name)->where('country_id', $country->id)->first();
-
+        $city = City::where('name', $validated['city_name'])->where('country_id', $country->id)->first();
         if(!$city) {
             $city = new City();
-            $city->name = $request->city_name;
+            $city->name = $validated['city_name'];
             $city->country_id = $country->id;
             $city->save();
         }
 
-        $address = Address::where('postal_code', $request->postal_code)->where('address', $request->address)->where('city_id', $city->id)->first();
+        $address = Address::where('postal_code', $validated['postal_code'])->where('address', $validated['address'])->where('city_id', $city->id)->first();
 
         if(!$address) {
             $address = new Address();
-            $address->postal_code = $request->postal_code;
-            $address->address = $request->address;
+            $address->postal_code = $validated['postal_code'];
+            $address->address = $validated['address'];
             $address->city_id = $city->id;
             $address->save();
         }
@@ -80,12 +83,12 @@ class BookingGuestController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'The guest details have been updated successfully.',
+            'message' => 'The guest details have been saved successfully.',
             'data' => $guest
         ], 201);
     }
 
-    public function update(Request $request, $bookingId, $guestId) {
+    public function update(BookingGuestUpdateRequest $request, $bookingId, $guestId) {
         $booking = Booking::find($bookingId);
         if (!$booking) {
             return response()->json([
@@ -104,36 +107,37 @@ class BookingGuestController extends Controller
             ], 404);
         }
 
-        $guest->first_name = $request->first_name;
-        $guest->last_name = $request->last_name;
-        $guest->birth_date = $request->birth_date;
-        $guest->nationality = $request->nationality;
-        $guest->document_type = $request->document_type;
-        $guest->document_number = $request->document_number;
+        $validated = $request->validated();
 
-        $country = Country::where('name', $request->country_name)->first();
+        $guest->first_name = $validated['first_name'];
+        $guest->last_name = $validated['last_name'];
+        $guest->birth_date = $validated['birth_date'];
+        $guest->nationality = $validated['nationality'];
+        $guest->document_type = $validated['document_type'];
+        $guest->document_number = $validated['document_number'];
+
+        $country = Country::where('name', $validated['country_name'])->first();
 
         if(!$country) {
             $country = new Country();
-            $country->name = $request->country_name;
+            $country->name = $validated['country_name'];
             $country->save();
         }
 
-        $city = City::where('name', $request->city_name)->where('country_id', $country->id)->first();
-
+        $city = City::where('name', $validated['city_name'])->where('country_id', $country->id)->first();
         if(!$city) {
             $city = new City();
-            $city->name = $request->city_name;
+            $city->name = $validated['city_name'];
             $city->country_id = $country->id;
             $city->save();
         }
 
-        $address = Address::where('postal_code', $request->postal_code)->where('address', $request->address)->where('city_id', $city->id)->first();
+        $address = Address::where('postal_code', $validated['postal_code'])->where('address', $validated['address'])->where('city_id', $city->id)->first();
 
         if(!$address) {
             $address = new Address();
-            $address->postal_code = $request->postal_code;
-            $address->address = $request->address;
+            $address->postal_code = $validated['postal_code'];
+            $address->address = $validated['address'];
             $address->city_id = $city->id;
             $address->save();
         }
