@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Me\BookingController;
 use App\Http\Controllers\Api\Admin\RoomController as AdminRoomController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Api\Admin\BookingGuestController as AdminBookingGuestController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -58,4 +59,8 @@ Route::prefix('admin')->group(function () {
     Route::get('/bookings/{id}', [AdminBookingController::class, 'show']);
     Route::post('/bookings', [AdminBookingController::class, 'store']);
     Route::put('/bookings/{id}', [AdminBookingController::class, 'update']);
+
+    Route::post('/bookings/{bookingId}/guests', [AdminBookingGuestController::class, 'store']);
+    Route::put('/bookings/{bookingId}/guests/{guestId}', [AdminBookingGuestController::class, 'update']);
+    Route::delete('/bookings/{bookingId}/guests/{guestId}', [AdminBookingGuestController::class, 'destroy']);
 });
