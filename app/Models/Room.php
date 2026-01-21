@@ -12,4 +12,12 @@ class Room extends Model
     public function bookings() {
         return $this->hasMany(Booking::class);
     }
+
+    public function images() {
+        return $this->hasMany(RoomImage::class);
+    }
+
+    public function primaryImage() {
+        return $this->hasOne(RoomImage::class)->where('is_primary', true);
+    }
 }

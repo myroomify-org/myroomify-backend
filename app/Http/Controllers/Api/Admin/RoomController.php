@@ -7,11 +7,12 @@ use Illuminate\Http\Request;
 use App\Http\Requests\Admin\RoomStoreRequest;
 use App\Http\Requests\Admin\RoomUpdateRequest;
 use App\Models\Room;
+use App\Models\RoomImage;
 
 class RoomController extends Controller
 {
     public function index() {
-        $rooms = Room::withTrashed()->get();
+        $rooms = Room::withTrashed()->with('primaryImage')->get();
 
         if($rooms->isEmpty()) {
             return response()->json([
@@ -29,7 +30,7 @@ class RoomController extends Controller
     }
 
     public function show($id) {
-        $room = Room::withTrashed()->find($id);
+        $room = Room::withTrashed()->with('images')->find($id);
 
         if(!$room) {
             return response()->json([
@@ -57,15 +58,21 @@ class RoomController extends Controller
 
         $room->save();
 
-        if($request->hasFile('image')) {
-            $filename = 'szobakep_' . $room->id . '.' . $request->file('image')->extension();
-            $path = $request->file('image')->storeAs('rooms', $filename, 'public');
-            $room->image = $path;
-        }else {
-            $room->image = null;
-        }
+        $files = $request->allFiles();
 
-        $room->save();
+        if (isset($files['images'])) {
+            foreach ($files['images'] as $index => $file) {
+                $filename = 'room_' . $room->id . '_' . ($index + 1) . '.' . $file->extension();
+                $path = $file->storeAs('rooms', $filename, 'public');
+
+                $image = new RoomImage();
+                $image->room_id = $room->id;
+                $image->path = $path;
+                $image->is_primary = $index === 0;
+                $image->position = $index;
+                $image->save();
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -94,13 +101,25 @@ class RoomController extends Controller
 
         $files = $request->allFiles();
 
-        if(isset($files['image'])) {
-            $filename = 'szobakep_' . $room->id . '.' . $request->file('image')->extension();
-            $path = $files['image']->storeAs('rooms', $filename, 'public');
-            $room->image = $path;
+        if (isset($files['images'])) {
+            $lastPosition = $room->images->max('position') ?? 0;
+
+            foreach ($files['images'] as $index => $file) {
+                $filename = 'room_' . $room->id . '_' . ($lastPosition + $index + 1) . '.' . $file->extension();
+                $path = $file->storeAs('rooms', $filename, 'public');
+
+                $image = new RoomImage();
+                $image->room_id = $room->id;
+                $image->path = $path;
+                $image->is_primary = false;
+                $image->position = $lastPosition + $index + 1;
+                $image->save();
+            }
         }
 
-        $room->save();
+        if (!$room->images->where('is_primary', true)->count() && $room->images->count()) {
+            $room->images->first()->update(['is_primary' => true]);
+        }
 
         return response()->json([
             'success' => true,

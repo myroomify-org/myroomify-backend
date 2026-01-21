@@ -23,7 +23,6 @@ class RoomSeeder extends Seeder
                 'capacity' => rand(1, 4),
                 'description' => "Description for Room $i",
                 'price' => rand(50, 200),
-                'image' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);

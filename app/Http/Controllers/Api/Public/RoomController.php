@@ -9,7 +9,7 @@ use App\Models\Room;
 class RoomController extends Controller
 {
     public function index() {
-        $rooms = Room::all();
+        $rooms = Room::with('primaryImage')->get();
 
         if($rooms->isEmpty()) {
             return response()->json([
@@ -27,7 +27,7 @@ class RoomController extends Controller
     }
 
     public function show($id) {
-        $room = Room::find($id);
+        $room = Room::with('images')->find($id);
 
         if(!$room) {
             return response()->json([
