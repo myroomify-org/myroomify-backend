@@ -123,6 +123,7 @@ class BookingController extends Controller
         $validated = $request->validated();
 
         $overlappingBooking = $room->bookings()
+            ->where('status', '!=', 'cancelled')
             ->where('id', '!=', $booking->id)
             ->where('check_in', '<', $validated['check_out'])
             ->where('check_out', '>', $validated['check_in'])
@@ -156,6 +157,38 @@ class BookingController extends Controller
             'success' => true,
             'message' => 'The booking has been updated successfully.',
             'data' => $booking->load(['room', 'guests', 'bookingBillingDetail']),
+        ]);
+    }
+
+    public function cancel($bookingId) {
+        $user = auth()->user();
+
+        $booking = $user->bookings()->find($bookingId);
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The booking could not be found or does not belong to you.',
+                'data' => $booking
+            ], 404);
+        }
+
+        if (in_array($booking->status, ['cancelled', 'completed'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking can no longer be cancelled.',
+                'data' => $booking
+            ], 400);
+        }
+
+        $booking->status = 'cancelled';
+
+        $booking->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'The booking has been cancelled successfully.',
+            'data' => $booking
         ]);
     }
 }

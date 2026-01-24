@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Admin\BookingStoreRequest;
 use App\Http\Requests\Admin\BookingUpdateRequest;
 use App\Models\User;
@@ -14,6 +15,7 @@ use Carbon\Carbon;
 class BookingController extends Controller
 {
     public function index() {
+
         $bookings = Booking::with(['user', 'room', 'guests', 'bookingBillingDetail'])->get();
 
         return response()->json([
@@ -138,5 +140,65 @@ class BookingController extends Controller
             'message' => 'The booking has been updated successfully.',
             'data' => $booking->load(['user', 'room', 'guests', 'bookingBillingDetail']),
         ]);
+    }
+
+    public function confirm($id) {
+        $booking = Booking::find($id);
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The booking could not be found.',
+                'data' => $booking
+            ], 404);
+        }
+
+        if ($booking->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only bookings with a "pending" status can be confirmed.',
+                'data' => $booking
+            ], 400);
+        }
+
+        $booking->status = 'confirmed';
+
+        $booking->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'The booking has been successfully confirmed.',
+            'data' => $booking
+        ], 200);
+    }
+
+    public function cancel($id) {
+        $booking = Booking::find($id);
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The booking could not be found.',
+                'data' => $booking
+            ], 404);
+        }
+
+        if ($booking->status === 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'The booking has already been cancelled.',
+                'data' => $booking
+            ], 400);
+        }
+
+        $booking->status = 'cancelled';
+
+        $booking->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'The booking has been successfully cancelled.',
+            'data' => $booking
+        ], 200);
     }
 }

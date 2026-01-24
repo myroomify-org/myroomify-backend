@@ -38,6 +38,7 @@ Route::prefix('me')->middleware('auth:sanctum')->group(function () {
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::put('/bookings/{id}', [BookingController::class, 'update']);
+    Route::put('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
 });
 
 Route::prefix('admin')->group(function () {
@@ -59,6 +60,9 @@ Route::prefix('admin')->group(function () {
     Route::get('/bookings/{id}', [AdminBookingController::class, 'show']);
     Route::post('/bookings', [AdminBookingController::class, 'store']);
     Route::put('/bookings/{id}', [AdminBookingController::class, 'update']);
+
+    Route::put('/bookings/{id}/cancel', [AdminBookingController::class, 'cancel']);
+    Route::put('/bookings/{id}/confirm', [AdminBookingController::class, 'confirm']);
 
     Route::post('/bookings/{bookingId}/guests', [AdminBookingGuestController::class, 'store']);
     Route::put('/bookings/{bookingId}/guests/{guestId}', [AdminBookingGuestController::class, 'update']);
