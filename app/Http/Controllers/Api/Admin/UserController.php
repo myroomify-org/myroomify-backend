@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Admin\UserStoreRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,8 @@ use App\Models\Address;
 class UserController extends Controller
 {
     public function index() {
+        Gate::authorize('viewAny', User::class);
+
         $users = User::withTrashed()->with('profile.address.city.country')->get();
 
         if($users->isEmpty()) {
@@ -36,6 +39,8 @@ class UserController extends Controller
     public function show($id) {
         $user = User::withTrashed()->with('profile.address.city.country')->find($id);
 
+        Gate::authorize('view', $user);
+
         if(!$user) {
             return response()->json([
                 'success' => false,
@@ -52,6 +57,8 @@ class UserController extends Controller
     }
 
     public function store(UserStoreRequest $request) {
+        Gate::authorize('create', User::class);
+
         $validated = $request->validated();
 
         $user = new User();
@@ -108,6 +115,8 @@ class UserController extends Controller
 
     public function update(UserUpdateRequest $request, $id) {
         $user = User::withTrashed()->with('profile.address.city.country')->find($id);
+
+        Gate::authorize('update', $user);
 
         if(!$user) {
             return response()->json([
@@ -184,6 +193,8 @@ class UserController extends Controller
     public function destroy($id) {
         $user = User::withTrashed()->with('profile.address.city.country')->find($id);
 
+        Gate::authorize('delete', $user);
+
         if(!$user) {
             return response()->json([
                 'success' => false,
@@ -217,6 +228,8 @@ class UserController extends Controller
 
     public function restore($id) {
         $user = User::withTrashed()->with('profile.address.city.country')->find($id);
+
+        Gate::authorize('restore', $user);
 
         if(!$user) {
             return response()->json([

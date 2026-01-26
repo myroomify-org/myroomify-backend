@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Admin\BookingGuestStoreRequest;
 use App\Http\Requests\Admin\BookingGuestUpdateRequest;
 use App\Models\Booking;
@@ -16,6 +17,7 @@ class BookingGuestController extends Controller
 {
     public function store(BookingGuestStoreRequest $request, $bookingId) {
         $booking = Booking::find($bookingId);
+
         if (!$booking) {
             return response()->json([
                 'success' => false,
@@ -24,6 +26,8 @@ class BookingGuestController extends Controller
             ], 404);
         }
 
+        Gate::authorize('create', $booking);
+        
         if ($booking->status !== 'confirmed') {
             return response()->json([
                 'success' => false,
@@ -90,6 +94,7 @@ class BookingGuestController extends Controller
 
     public function update(BookingGuestUpdateRequest $request, $bookingId, $guestId) {
         $booking = Booking::find($bookingId);
+
         if (!$booking) {
             return response()->json([
                 'success' => false,
@@ -97,6 +102,8 @@ class BookingGuestController extends Controller
                 'data' => $booking
             ], 404);
         }
+
+        Gate::authorize('update', $booking);
 
         $guest = $booking->guests()->find($guestId);
         if (!$guest) {
@@ -155,6 +162,7 @@ class BookingGuestController extends Controller
 
     public function destroy($bookingId, $guestId) {
         $booking = Booking::find($bookingId);
+
         if (!$booking) {
             return response()->json([
                 'success' => false,
@@ -163,6 +171,8 @@ class BookingGuestController extends Controller
             ], 404);
         }
 
+        Gate::authorize('delete', $booking);
+        
         $guest = $booking->guests()->find($guestId);
         if (!$guest) {
             return response()->json([

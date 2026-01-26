@@ -102,7 +102,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'The token is invalid or has expired.',
-                'data' => null
+                'data' => $user
             ], 404);
         }
 

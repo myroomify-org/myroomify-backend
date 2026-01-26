@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Admin\RoomStoreRequest;
 use App\Http\Requests\Admin\RoomUpdateRequest;
 use App\Models\Room;
@@ -12,6 +13,8 @@ use App\Models\RoomImage;
 class RoomController extends Controller
 {
     public function index() {
+        Gate::authorize('viewAny', Room::class);
+
         $rooms = Room::withTrashed()->with('primaryImage')->get();
 
         if($rooms->isEmpty()) {
@@ -32,6 +35,8 @@ class RoomController extends Controller
     public function show($id) {
         $room = Room::withTrashed()->with('images')->find($id);
 
+        Gate::authorize('view', $room);
+
         if(!$room) {
             return response()->json([
                 'success' => false,
@@ -48,8 +53,10 @@ class RoomController extends Controller
     }
 
     public function store(RoomStoreRequest $request) {
+        Gate::authorize('create', Room::class);
+
         $validated = $request->validated();
-        
+
         $room = new Room();
         $room->name = $validated['name'];
         $room->capacity = $validated['capacity'];
@@ -83,6 +90,8 @@ class RoomController extends Controller
 
     public function update(RoomUpdateRequest $request, $id) {
         $room = Room::withTrashed()->find($id);
+
+        Gate::authorize('update', $room);
 
         if(!$room) {
             return response()->json([
@@ -131,6 +140,8 @@ class RoomController extends Controller
     public function destroy($id) {
         $room = Room::withTrashed()->find($id);
 
+        Gate::authorize('delete', $room);
+
         if(!$room) {
             return response()->json([
                 'success' => false,
@@ -158,6 +169,8 @@ class RoomController extends Controller
 
     public function restore($id) {
         $room = Room::withTrashed()->find($id);
+
+        Gate::authorize('restore', $room);
 
         if(!$room) {
             return response()->json([
